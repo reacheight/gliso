@@ -11,7 +11,8 @@ import simplifile.{type FileError, Enoent}
 const usage =
   "Available commands:
 take <dose> — record a medication intake (dose in mg, positive integer)
-last [<n>] — show last n (optional, default = 2) records"
+last [<n>] — show last n (optional, default = 2) records
+total — show total dose taken"
 
 const default_last_count = 2
 
@@ -32,7 +33,18 @@ pub fn main() -> Nil {
         Ok(n) if n > 0 -> last(default_last_count)
         _ -> io.println("<n> should be a positive integer, was " <> quote(n))
       }
+    ["total"] -> total()
     _ -> io.println(usage)
+  }
+}
+
+fn total() -> Nil {
+  case read_records() {
+    Ok(records) -> {
+      let total_mg = records |> list.map(fn(r) { r.dose }) |> int.sum
+      io.println(int.to_string(total_mg) <> " mg")
+    }
+    _ -> io.println("could not read records because of some file error")
   }
 }
 
