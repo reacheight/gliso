@@ -68,11 +68,13 @@ fn read_last_records(n: Int) -> Result(List(Record), Nil) {
 fn read_records() -> Result(List(Record), Nil) {
   case simplifile.read(records_filename) {
     Ok(file) ->
-      file
-      |> string.trim
-      |> string.split("\n")
-      |> list.map(record.parse)
-      |> result.all
+      Ok(
+        file
+        |> string.trim
+        |> string.split("\n")
+        |> list.map(record.parse)
+        |> result.values,
+      )
     Error(Enoent) -> Ok([])
     _ -> Error(Nil)
   }
