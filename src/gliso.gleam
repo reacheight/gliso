@@ -1,4 +1,5 @@
 import argv
+import envoy
 import gleam/int
 import gleam/io
 import gleam/list
@@ -6,7 +7,7 @@ import gleam/result
 import gleam/string
 import gleam/time/timestamp
 import record.{type Record, Record}
-import simplifile.{type FileError, Enoent}
+import simplifile.{Enoent}
 
 const usage =
   "Available commands:
@@ -15,6 +16,10 @@ last [<n>] — show last n (optional, default = 2) records
 total — show total dose taken"
 
 const default_last_count = 2
+
+const app = "gliso"
+
+const records_filename = "records.csv"
 
 pub fn main() -> Nil {
   case argv.load().arguments {
@@ -27,10 +32,10 @@ pub fn main() -> Nil {
             <> quote(dose),
           )
       }
-    ["last"] -> last(2)
+    ["last"] -> last(default_last_count)
     ["last", n] ->
       case int.parse(n) {
-        Ok(n) if n > 0 -> last(default_last_count)
+        Ok(n) if n > 0 -> last(n)
         _ -> io.println("<n> should be a positive integer, was " <> quote(n))
       }
     ["total"] -> total()
@@ -66,10 +71,33 @@ fn take(dose: Int) -> Nil {
   }
 }
 
-const records_filename = "records.csv"
+fn get_state_dir() -> Result(String, Nil) {
+  case envoy.get("XDG_STATE_HOME"), envoy.get("HOME") {
+    Ok(xdg_state_home), _ if xdg_state_home != "" ->
+      Ok(xdg_state_home <> "/" <> app)
+    _, Ok(home) if home != "" -> Ok(home <> "/.local/state/" <> app)
+    _, _ -> Error(Nil)
+  }
+}
 
-fn append_record(record: String) -> Result(Nil, FileError) {
-  simplifile.append(records_filename, record <> "\n")
+fn get_records_path() -> Result(String, Nil) {
+  get_state_dir() |> result.map(fn(dir) { dir <> "/" <> records_filename })
+}
+
+fn append_record(record: String) -> Result(Nil, Nil) {
+  case get_state_dir() {
+    Ok(state_dir) ->
+      case simplifile.create_directory_all(state_dir) {
+        Ok(Nil) ->
+          simplifile.append(
+            state_dir <> "/" <> records_filename,
+            record <> "\n",
+          )
+          |> result.map_error(fn(_) { Nil })
+        _ -> Error(Nil)
+      }
+    _ -> Error(Nil)
+  }
 }
 
 fn read_last_records(n: Int) -> Result(List(Record), Nil) {
@@ -78,17 +106,21 @@ fn read_last_records(n: Int) -> Result(List(Record), Nil) {
 }
 
 fn read_records() -> Result(List(Record), Nil) {
-  case simplifile.read(records_filename) {
-    Ok(file) ->
-      Ok(
-        file
-        |> string.trim
-        |> string.split("\n")
-        |> list.map(record.parse)
-        |> result.values,
-      )
-    Error(Enoent) -> Ok([])
-    _ -> Error(Nil)
+  case get_records_path() {
+    Error(_) -> Error(Nil)
+    Ok(path) ->
+      case simplifile.read(path) {
+        Ok(file) ->
+          Ok(
+            file
+            |> string.trim
+            |> string.split("\n")
+            |> list.map(record.parse)
+            |> result.values,
+          )
+        Error(Enoent) -> Ok([])
+        _ -> Error(Nil)
+      }
   }
 }
 
