@@ -27,9 +27,9 @@ pub fn format_human(record: Record) -> String {
     <> " "
     <> calendar.month_to_string(date.month)
     <> ", "
-    <> int.to_string(time.hours)
+    <> string.pad_start(int.to_string(time.hours), 2, "0")
     <> ":"
-    <> int.to_string(time.minutes)
+    <> string.pad_start(int.to_string(time.minutes), 2, "0")
 
   let dose_part = int.to_string(record.dose) <> " mg"
 
