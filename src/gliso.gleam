@@ -2,6 +2,7 @@ import argv
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/result
 import gleam/time/timestamp
 import gliso/internal/intake.{Intake}
 import gliso/internal/records
@@ -10,7 +11,8 @@ const usage =
   "Available commands:
 take <dose> — record a medication intake (dose in mg, positive integer)
 last [<n>] — show last n (optional, default = 2) records
-total — show total dose taken"
+total — show total dose taken
+file — show records file path"
 
 const default_last_count = 2
 
@@ -32,6 +34,11 @@ pub fn main() -> Nil {
         _ -> io.println("<n> should be a positive integer, was " <> quote(n))
       }
     ["total"] -> total()
+    ["file"] ->
+      io.println(
+        records.get_records_path()
+        |> result.unwrap("could not find the records file"),
+      )
     _ -> io.println(usage)
   }
 }
