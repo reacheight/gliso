@@ -6,7 +6,7 @@ import gleam/list
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
-import record.{type Record, Record}
+import gliso/internal/record.{type Record, Record}
 import simplifile.{Enoent}
 
 const usage =
