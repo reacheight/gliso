@@ -8,19 +8,19 @@ pub type Intake {
   Intake(time: Timestamp, dose: Int)
 }
 
-pub fn format_csv(record: Intake) -> String {
-  let #(seconds, _) = record.time |> timestamp.to_unix_seconds_and_nanoseconds()
+pub fn format_csv(intake: Intake) -> String {
+  let #(seconds, _) = intake.time |> timestamp.to_unix_seconds_and_nanoseconds()
 
   [
     int.to_string(seconds),
-    int.to_string(record.dose),
+    int.to_string(intake.dose),
   ]
   |> string.join(";")
 }
 
-pub fn format_human(record: Intake) -> String {
+pub fn format_human(intake: Intake) -> String {
   let #(date, time) =
-    timestamp.to_calendar(record.time, calendar.local_offset())
+    timestamp.to_calendar(intake.time, calendar.local_offset())
 
   let date_part =
     int.to_string(date.day)
@@ -31,7 +31,7 @@ pub fn format_human(record: Intake) -> String {
     <> ":"
     <> to_padded_string(time.minutes)
 
-  let dose_part = int.to_string(record.dose) <> " mg"
+  let dose_part = int.to_string(intake.dose) <> " mg"
 
   date_part <> " — " <> dose_part
 }

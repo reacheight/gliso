@@ -14,10 +14,13 @@ pub type RecordsError {
   FileError(simplifile.FileError)
 }
 
-pub fn append_record(record: String) -> Result(Nil, RecordsError) {
+pub fn append_record(record: Intake) -> Result(Nil, RecordsError) {
   use records_path <- result.try(ensure_records_path())
 
-  simplifile.append(to: records_path, contents: record <> "\n")
+  simplifile.append(
+    to: records_path,
+    contents: intake.format_csv(record) <> "\n",
+  )
   |> result.map_error(FileError)
 }
 

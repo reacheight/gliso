@@ -68,7 +68,7 @@ fn last(n: Int) -> Nil {
 fn take(dose: Int) -> Nil {
   let record = Intake(timestamp.system_time(), dose)
 
-  case record |> intake.format_csv |> records.append_record {
+  case record |> records.append_record {
     Ok(_) -> "successfully added the record"
     Error(err) -> "could not add the record: " <> get_error_message(err)
   }
