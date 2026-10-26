@@ -6,7 +6,7 @@ import gleam/list
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
-import gliso/internal/record.{type Record, Record}
+import gliso/internal/intake.{type Intake, Intake}
 import simplifile.{Enoent}
 
 const usage =
@@ -57,15 +57,15 @@ fn last(n: Int) -> Nil {
   case read_last_records(n) {
     Ok([]) -> io.println("no records yet")
     Ok(records) ->
-      records |> list.map(record.format_human) |> list.each(io.println)
+      records |> list.map(intake.format_human) |> list.each(io.println)
     _ -> io.println("could not read records because of some file error")
   }
 }
 
 fn take(dose: Int) -> Nil {
-  let record = Record(timestamp.system_time(), dose)
+  let record = Intake(timestamp.system_time(), dose)
 
-  case record |> record.format_csv |> append_record {
+  case record |> intake.format_csv |> append_record {
     Ok(_) -> io.println("successfully added the record")
     _ -> io.println("could not add the record because of some file error")
   }
@@ -100,12 +100,12 @@ fn append_record(record: String) -> Result(Nil, Nil) {
   }
 }
 
-fn read_last_records(n: Int) -> Result(List(Record), Nil) {
+fn read_last_records(n: Int) -> Result(List(Intake), Nil) {
   read_records()
   |> result.map(fn(records) { records |> list.reverse() |> list.take(n) })
 }
 
-fn read_records() -> Result(List(Record), Nil) {
+fn read_records() -> Result(List(Intake), Nil) {
   case get_records_path() {
     Error(_) -> Error(Nil)
     Ok(path) ->
@@ -115,7 +115,7 @@ fn read_records() -> Result(List(Record), Nil) {
             file
             |> string.trim
             |> string.split("\n")
-            |> list.map(record.parse)
+            |> list.map(intake.parse)
             |> result.values,
           )
         Error(Enoent) -> Ok([])
