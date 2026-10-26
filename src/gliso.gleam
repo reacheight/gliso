@@ -12,7 +12,7 @@ const usage =
   "Available commands:
 take <dose> — record a medication intake (dose in mg, positive integer)
 last [<n>] — show last n (optional, default = 2) records
-total — show total dose taken
+total — show total dose taken alltime
 file — show records file path"
 
 const default_last_count = 2
