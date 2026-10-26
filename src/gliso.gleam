@@ -2,10 +2,11 @@ import argv
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/result
+import gleam/string
 import gleam/time/timestamp
 import gliso/internal/intake.{Intake}
-import gliso/internal/records
+import gliso/internal/records.{type RecordsError, FileError, HomeNotFound}
+import simplifile
 
 const usage =
   "Available commands:
@@ -35,10 +36,11 @@ pub fn main() -> Nil {
       }
     ["total"] -> total()
     ["file"] ->
-      io.println(
-        records.get_records_path()
-        |> result.unwrap("could not find the records file"),
-      )
+      case records.get_records_path() {
+        Ok(path) -> path
+        Error(err) -> get_error_message(err)
+      }
+      |> io.println
     _ -> io.println(usage)
   }
 }
@@ -47,27 +49,37 @@ fn total() -> Nil {
   case records.read_records() {
     Ok(records) -> {
       let total_mg = records |> list.map(fn(r) { r.dose }) |> int.sum
-      io.println(int.to_string(total_mg) <> " mg")
+      int.to_string(total_mg) <> " mg"
     }
-    _ -> io.println("could not read records because of some file error")
+    Error(err) -> "could not read records: " <> get_error_message(err)
   }
+  |> io.println
 }
 
 fn last(n: Int) -> Nil {
   case records.read_last_records(n) {
-    Ok([]) -> io.println("no records yet")
-    Ok(records) ->
-      records |> list.map(intake.format_human) |> list.each(io.println)
-    _ -> io.println("could not read records because of some file error")
+    Ok([]) -> "no records yet"
+    Ok(records) -> records |> list.map(intake.format_human) |> string.join("\n")
+    Error(err) -> "could not read records: " <> get_error_message(err)
   }
+  |> io.println
 }
 
 fn take(dose: Int) -> Nil {
   let record = Intake(timestamp.system_time(), dose)
 
   case record |> intake.format_csv |> records.append_record {
-    Ok(_) -> io.println("successfully added the record")
-    _ -> io.println("could not add the record because of some file error")
+    Ok(_) -> "successfully added the record"
+    Error(err) -> "could not add the record: " <> get_error_message(err)
+  }
+  |> io.println
+}
+
+fn get_error_message(err: RecordsError) -> String {
+  case err {
+    HomeNotFound ->
+      "could not find home env var to create the records file (searched 'XDG_STATE_HOME' and 'HOME')"
+    FileError(err) -> "file error: " <> simplifile.describe_error(err)
   }
 }
 
